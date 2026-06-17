@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `index.ts` entry point re-exporting triples, loader, build, pack, publish, config.
 - Enterprise README (EN + ES): rationale, architecture diagram, supported targets,
   roadmap, ecosystem, project structure.
+- `ARCHITECTURE.md`, `ROADMAP.md`, `ECOSYSTEM.md` — enterprise documentation.
 - `CHANGELOG.md`.
+- `.gitattributes` — normalizes line endings to LF (CI and CLI shebang safety).
 - `ci.yml` workflow: type-check, build, and contract test on every push to `main`.
 
 ### Changed

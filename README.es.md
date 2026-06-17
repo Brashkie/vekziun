@@ -124,39 +124,43 @@ Exports por subpath: `@vekziun/napi` (API completa), `/loader` (solo runtime, li
 
 ## Roadmap
 
-Vekziun sigue una filosofía de "publicar lo que funciona, después crecer". El estado
-actual es honesto:
+Vekziun sigue una filosofía de "publicar lo que funciona, después crecer". La línea entre
+lo que existe y lo que está planeado se mantiene honesta.
 
-**Disponible ahora (v0.1.x)**
-- ✅ Resolución de plataforma por contrato único (`triples`)
-- ✅ `vekziun build` — compilación host + cross-toolchain
-- ✅ `vekziun pack` — generación de paquetes de plataforma con `os`/`cpu`/`libc`
-- ✅ `vekziun publish` — publicación ordenada y segura con promoción `next` → `latest`
-- ✅ Detección de musl/glibc en runtime
-- ✅ Pin de versión exacto para prevenir rotura de ABI
+| Versión | Foco | Estado |
+|---------|------|--------|
+| **v0.1.x** | Base: contrato único, build · pack · publish, loader con musl | ✅ actual |
+| **v0.2.x** | DX: `vekziun doctor` (chequeo de toolchain), `vekziun init` (scaffold) | planeado |
+| **v0.3.x** | Config: configs `.ts`/`.js`, presets compartibles, `defineConfig` tipado | planeado |
+| **v0.4.x** | Alcance: más targets (Android, FreeBSD, riscv64), builds paralelos | planeado |
 
-**Planeado**
-- ⬜ `vekziun doctor` — diagnóstico de toolchain antes de que cargo falle de forma críptica
-- ⬜ `vekziun init` — scaffold de un addon nuevo (Cargo.toml, config, CI)
-- ⬜ Presets de configuración (configs `.ts`/`.js` vía loader, presets compartibles)
-- ⬜ Cobertura extendida de targets (Android, FreeBSD, riscv64) tras verificación en hardware
+**Non-goals:** Vekziun no será un bundler genérico de JS (usá tsup/unbuild), un task runner
+de monorepos, ni "otro build tool". Se mantiene enfocado en publicar addons NAPI multiplataforma.
+
+→ Roadmap completo con detalles: **[ROADMAP.md](./ROADMAP.md)**
 
 ---
 
 ## Ecosistema
 
-Vekziun se publica hoy como un solo paquete, `@vekziun/napi`, con internals modulares.
-A medida que casos de uso reales demanden instalaciones más finas, está diseñado para
-partirse bajo el mismo scope — por ejemplo un `@vekziun/loader` liviano para consumidores
-que solo necesitan el runtime y no deberían arrastrar el tooling de build. Esa partición
-ocurre cuando surge una necesidad concreta, no antes; un paquete con buenos `exports`
-cubre la superficie actual.
+Vekziun se publica hoy como un solo paquete, `@vekziun/napi`, con internals modulares y
+`exports` por subpath — así ya tenés imports finos (`@vekziun/napi/loader` carga solo el
+loader) sin múltiples paquetes.
 
 ```
-vekziun (repositorio)
-└── @vekziun/napi        ← la herramienta (build · pack · publish · loader · CLI)
-    └── @vekziun/loader   ← futuro: solo runtime, cuando un addon lo necesite
+Hoy                                Planeado (cuando surja una necesidad real)
+────────────────────              ─────────────────────────────────────────
+vekziun (repositorio)             vekziun (monorepo)
+└── @vekziun/napi                 ├── @vekziun/core    ← el contrato (compartido)
+    build · pack · publish        ├── @vekziun/loader  ← solo runtime, liviano
+    loader · CLI                  └── @vekziun/napi    ← build · pack · publish · CLI
 ```
+
+La partición ocurre solo cuando un consumidor concreto la necesita — ej. un addon en
+producción que necesita el loader sin el tooling de build. Se evita partir por simetría;
+la regla es *¿quién instala esto solo, y por qué?*
+
+→ Ecosistema y modelo de addons completo: **[ECOSYSTEM.md](./ECOSYSTEM.md)**
 
 ---
 
@@ -190,6 +194,16 @@ npm run typecheck   # chequea tipos sin emitir
 ```
 
 Los releases se disparan por tag: push a `main` corre CI; empujar un tag `v*` publica.
+
+---
+
+
+## Documentación
+
+- [Arquitectura](./ARCHITECTURE.md) — el contrato único, módulos, plan de migración
+- [Roadmap](./ROADMAP.md) — qué existe, qué está planeado, non-goals
+- [Ecosistema](./ECOSYSTEM.md) — la familia `@vekziun/*` y cómo se relacionan los addons
+- [Changelog](./CHANGELOG.md) — historial de versiones
 
 ---
 
