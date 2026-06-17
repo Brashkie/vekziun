@@ -1,0 +1,15 @@
+# Normaliza finales de línea: LF en el repositorio para todos los OS.
+# Evita problemas de CRLF en CI (runners Linux) y con el shebang del CLI.
+* text=auto eol=lf
+
+# Binarios: nunca tocar (sin conversión de line endings)
+*.node binary
+*.png binary
+*.jpg binary
+*.ico binary
+
+# Scripts que DEBEN ser LF sí o sí (shebang, ejecución en Linux)
+*.sh text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
