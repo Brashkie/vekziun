@@ -1,77 +1,15 @@
 name: release
 
-# Se dispara al empujar un tag de versión (ej: v0.1.0)
+# Publica la herramienta @vekziun/napi (TypeScript puro, sin binarios nativos).
+# Se dispara al empujar un tag de versión (ej: v0.1.0).
 on:
   push:
     tags:
       - "v*"
 
 jobs:
-  # ─────────────────────────────────────────────────────────────
-  # ETAPA 1: matriz — cada OS compila SU binario en paralelo
-  # ─────────────────────────────────────────────────────────────
-  build:
-    strategy:
-      fail-fast: false # si un OS falla, los otros siguen
-      matrix:
-        include:
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            suffix: win32-x64-msvc
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            suffix: linux-x64-gnu
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            suffix: darwin-arm64
-
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: examples/hello-addon
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      # construir la HERRAMIENTA (en la raíz, no en el ejemplo)
-      - name: Build vekziun tool
-        working-directory: .
-        run: |
-          npm ci
-          npm run build
-
-      # build + pack del addon, con SOLO el target de este runner
-      - name: Build & pack native addon
-        run: |
-          node ../../dist/cli.js build
-          node ../../dist/cli.js pack
-
-      # subir el paquete de plataforma de ESTE runner como artifact
-      - name: Upload platform package
-        uses: actions/upload-artifact@v4
-        with:
-          name: pkg-${{ matrix.suffix }} # nombre ÚNICO por runner (v4 lo exige)
-          path: examples/hello-addon/npm/${{ matrix.suffix }}/
-          if-no-files-found: error
-
-  # ─────────────────────────────────────────────────────────────
-  # ETAPA 2: publish — junta TODOS los artifacts y publica una vez
-  # ─────────────────────────────────────────────────────────────
   publish:
-    needs: build # espera a que TODA la matriz termine
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: examples/hello-addon
+    runs-on: ubuntu-latest # TS puro: un solo OS, sin matriz
 
     steps:
       - uses: actions/checkout@v4
@@ -80,28 +18,23 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build vekziun tool
-        working-directory: .
+      - name: Install & build
         run: |
           npm ci
           npm run build
 
-      # descargar TODOS los pkg-* y juntarlos en npm/
-      - name: Download all platform packages
-        uses: actions/download-artifact@v4
-        with:
-          pattern: pkg-* # todos los de la matriz
-          path: examples/hello-addon/npm
-          merge-multiple: true # los fusiona en un solo dir npm/
+      # verificación: el contrato debe seguir intacto antes de publicar
+      - name: Run contract test
+        run: npm test
 
-      - name: Show what will be published
-        run: node ../../dist/cli.js publish --dry-run
+      # mostrar qué se publicaría (sin publicar aún)
+      - name: Show package contents
+        run: npm pack --dry-run
 
-      # Escribir el token al .npmrc del HOME: npm lo lee desde cualquier cwd,
-      # incluidas las subcarpetas npm/<suffix>/ donde corre cada `npm publish`.
-      # (setup-node lo pone en una ruta temporal que no siempre resuelve con cwd anidado.)
+      # token desde los secrets del repo
       - name: Authenticate to npm
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
-      - name: Publish to npm
-        run: node ../../dist/cli.js publish
+      # publicar. --access public es OBLIGATORIO para scope @vekziun
+      - name: Publish @vekziun/napi
+        run: npm publish --access public

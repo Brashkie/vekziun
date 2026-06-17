@@ -10,6 +10,10 @@
   },
   "type": "module",
   "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./loader": {
       "types": "./dist/napi/loader.d.ts",
       "default": "./dist/napi/loader.js"
