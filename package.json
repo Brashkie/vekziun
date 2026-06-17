@@ -1,6 +1,6 @@
 {
   "name": "@vekziun/napi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Compila y resuelve addons NAPI-RS multiplataforma con un contrato único triple→suffix→package.",
   "license": "Apache-2.0",
   "author": "Brashkie (Hepein Oficial)",
