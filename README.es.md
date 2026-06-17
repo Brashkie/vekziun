@@ -195,4 +195,4 @@ Los releases se disparan por tag: push a `main` corre CI; empujar un tag `v*` pu
 
 ## Licencia
 
-[Apache-2.0](./LICENSE) © Moisés Yaurivilca (Hepein Oficial)
+[Apache-2.0](./LICENSE) © Hepein Oficial

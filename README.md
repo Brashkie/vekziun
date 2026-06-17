@@ -192,4 +192,4 @@ Releases are tag-driven: push to `main` runs CI; pushing a `v*` tag publishes.
 
 ## License
 
-[Apache-2.0](./LICENSE) © Moisés Yaurivilca (Hepein Oficial)
+[Apache-2.0](./LICENSE) © Hepein Oficial
