@@ -1,0 +1,32 @@
+# Dependencias
+node_modules/
+
+# Salida de compilación de la herramienta
+dist/
+
+# Salida de Rust / cargo
+target/
+**/target/
+
+# Artefactos nativos generados por vekziun build/pack
+dist-native/
+**/dist-native/
+npm/
+**/npm/
+*.node
+
+# Logs y temporales
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Entorno / secretos (NUNCA commitear)
+.env
+.env.local
+.npmrc
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/

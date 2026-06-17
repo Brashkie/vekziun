@@ -1,0 +1,10 @@
+{
+  "napi": {
+    "packageName": "@brashkie/hello-addon",
+    "crate": "hello-addon",
+    "targets": [
+      "x86_64-unknown-linux-gnu"
+    ],
+    "outDir": "dist-native"
+  }
+}

@@ -1,0 +1,15 @@
+[package]
+name = "hello-addon"
+version = "0.1.0"
+edition = "2021"
+
+# CRÍTICO: sin esto cargo NO genera un .node cargable. Es el error #1 de addons NAPI.
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "2", default-features = false, features = ["napi4"] }
+napi-derive = "2"
+
+[build-dependencies]
+napi-build = "2"
