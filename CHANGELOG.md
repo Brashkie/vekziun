@@ -4,6 +4,39 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.3] - 2026-06-19
+
+### Added
+- **Android targets** — `aarch64-linux-android` (suffix `android-arm64`) and
+  `armv7-linux-androideabi` (suffix `android-arm-eabi`). Now 10 supported targets.
+- Verified against napi-rs's runtime loader: on Android, `process.platform` is
+  `"android"` (not `"linux"`) and the 32-bit arm target carries the `eabi` suffix.
+  This was confirmed against real napi-rs output, not assumed.
+
+### Changed
+- `Abi` type now includes `"eabi"` for the Android 32-bit arm case.
+- Loader `currentSuffix()` handles `platform === "android"` correctly.
+
+### Note
+- Android binaries are typically cross-compiled in CI (Linux runner + NDK), not on a
+  dev machine. `vekziun build` will skip Android targets locally unless the NDK
+  cross-toolchain is configured — that's expected.
+
+## [0.1.2] - 2026-06-18
+
+### Improved
+- **Build error handling** — `vekziun build` now distinguishes three outcomes instead
+  of silently lumping everything into "skipped":
+  - **built** — compiled successfully
+  - **skipped** — the current machine lacks the target's toolchain (legitimate; another
+    CI runner will handle it)
+  - **failed** — the Rust code itself does not compile (fatal; cargo's output is shown)
+- Previously a real compilation error was hidden as "another runner will build it",
+  which was misleading. Now the actual cargo output is surfaced for code errors.
+- Clear message when `cargo` is not installed (instead of a cryptic `ENOENT`).
+- Defensive check: if cargo reports success but no binary is found, points to the
+  likely cause (`crate-type = ["cdylib"]` or crate name mismatch).
+
 ## [0.1.1] - 2026-06-17
 
 ### Added

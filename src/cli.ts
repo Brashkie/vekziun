@@ -32,18 +32,40 @@ async function cmdBuild(args: string[]): Promise<number> {
   console.log(`  targets: ${targets.length}`);
   console.log(`  salida:  ${outDir}/\n`);
 
-  const { built, skipped } = await build(crate, targets, outDir);
+  const { built, skipped, failed } = await build(crate, targets, outDir);
 
   for (const p of built) console.log(`  ✓ ${p}`);
-  for (const t of skipped) console.log(`  ⊘ ${t} (esta máquina no puede; lo hará otro runner de CI)`);
+  for (const s of skipped) console.log(`  ⊘ ${s.triple} (${s.reason}; lo hará otro runner de CI)`);
+  for (const f of failed) console.log(`  ✗ ${f.triple} (ERROR de compilación)`);
 
-  console.log(`\n${built.length} compilado(s), ${skipped.length} omitido(s).`);
+  console.log(
+    `\n${built.length} compilado(s), ${skipped.length} omitido(s), ${failed.length} con error.`
+  );
 
-  // si NADA se compiló, es un fallo real (config mala o sin toolchain del host)
+  // los FAILED son errores reales del código: mostramos la salida de cargo
+  if (failed.length > 0) {
+    console.error(`\n${"─".repeat(60)}`);
+    console.error(`Error de compilación. Salida de cargo:\n`);
+    for (const f of failed) {
+      console.error(`[${f.triple}]`);
+      console.error(f.output.trim());
+      console.error("");
+    }
+    console.error(
+      `${"─".repeat(60)}\n` +
+        `Esto es un error en el código Rust, no un problema de plataforma. ` +
+        `Corrige lo de arriba y vuelve a intentar.`
+    );
+    return 1;
+  }
+
+  // sin failed pero sin nada compilado: faltan todos los toolchains del host
   if (built.length === 0) {
     console.error(
-      `\nNo se compiló ningún target. ¿Falta Rust, el toolchain del host, ` +
-        `o crate-type=["cdylib"] en Cargo.toml?`
+      `\nNo se compiló ningún target en esta máquina.\n` +
+        `Los targets se omitieron por falta de toolchain — normal si compilas en CI ` +
+        `con matriz de varios OS. Para compilar localmente, instala el target del host:\n` +
+        `  rustup target add <triple>`
     );
     return 1;
   }

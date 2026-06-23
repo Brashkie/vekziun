@@ -2,7 +2,7 @@
 // build-time, runtime y publish importan ESTO. Nadie más conoce el formato del sufijo.
 // Si esto está bien, build/loader/publish NO PUEDEN divergir.
 
-export type Abi = "gnu" | "musl" | "msvc" | null;
+export type Abi = "gnu" | "musl" | "msvc" | "eabi" | null;
 
 export interface PlatformTriple {
   /** Rust target triple — lo que se le pasa a `cargo build --target` */
@@ -11,21 +11,24 @@ export interface PlatformTriple {
   platform: NodeJS.Platform;
   /** lo que devuelve process.arch en Node */
   arch: string;
-  /** ABI: relevante en linux (gnu/musl) y windows (msvc); null en darwin */
+  /** ABI: gnu/musl en linux, msvc en windows, eabi en android-arm; null en darwin/android-arm64 */
   abi: Abi;
 }
 
-// v0.1: 8 triples. Android queda fuera hasta verificar qué devuelve process.platform
-// en hardware real (Termux reporta "linux" o "android"? no lo asumimos).
+// 10 triples. Android verificado: napi-rs reporta process.platform="android",
+// arch "arm64"/"arm", con sufijos android-arm64 y android-arm-eabi (el de 32-bit
+// lleva "eabi"). Confirmado contra el loader que genera napi-rs.
 export const TRIPLES: PlatformTriple[] = [
-  { triple: "x86_64-pc-windows-msvc",     platform: "win32",  arch: "x64",   abi: "msvc" },
-  { triple: "aarch64-pc-windows-msvc",    platform: "win32",  arch: "arm64", abi: "msvc" },
-  { triple: "x86_64-apple-darwin",        platform: "darwin", arch: "x64",   abi: null   },
-  { triple: "aarch64-apple-darwin",       platform: "darwin", arch: "arm64", abi: null   },
-  { triple: "x86_64-unknown-linux-gnu",   platform: "linux",  arch: "x64",   abi: "gnu"  },
-  { triple: "x86_64-unknown-linux-musl",  platform: "linux",  arch: "x64",   abi: "musl" },
-  { triple: "aarch64-unknown-linux-gnu",  platform: "linux",  arch: "arm64", abi: "gnu"  },
-  { triple: "aarch64-unknown-linux-musl", platform: "linux",  arch: "arm64", abi: "musl" },
+  { triple: "x86_64-pc-windows-msvc",     platform: "win32",   arch: "x64",   abi: "msvc" },
+  { triple: "aarch64-pc-windows-msvc",    platform: "win32",   arch: "arm64", abi: "msvc" },
+  { triple: "x86_64-apple-darwin",        platform: "darwin",  arch: "x64",   abi: null   },
+  { triple: "aarch64-apple-darwin",       platform: "darwin",  arch: "arm64", abi: null   },
+  { triple: "x86_64-unknown-linux-gnu",   platform: "linux",   arch: "x64",   abi: "gnu"  },
+  { triple: "x86_64-unknown-linux-musl",  platform: "linux",   arch: "x64",   abi: "musl" },
+  { triple: "aarch64-unknown-linux-gnu",  platform: "linux",   arch: "arm64", abi: "gnu"  },
+  { triple: "aarch64-unknown-linux-musl", platform: "linux",   arch: "arm64", abi: "musl" },
+  { triple: "aarch64-linux-android",      platform: "android", arch: "arm64", abi: null   },
+  { triple: "armv7-linux-androideabi",    platform: "android", arch: "arm",   abi: "eabi" },
 ];
 
 /**

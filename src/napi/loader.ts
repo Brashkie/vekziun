@@ -36,6 +36,9 @@ function currentSuffix(): string {
   let abi: Abi = null;
   if (platform === "win32") abi = "msvc";
   else if (platform === "linux") abi = isMusl() ? "musl" : "gnu";
+  // Android: el arm de 32-bit lleva sufijo eabi (android-arm-eabi); arm64 no.
+  // process.platform devuelve "android" en Node sobre Android (verificado vs napi-rs).
+  else if (platform === "android" && arch === "arm") abi = "eabi";
   return suffix({ platform, arch, abi });
 }
 
