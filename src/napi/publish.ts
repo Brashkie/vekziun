@@ -52,11 +52,11 @@ export async function publish(opts: PublishOptions = {}): Promise<void> {
     .map((e) => path.join(npmDir, e.name));
 
   if (dirs.length === 0) {
-    throw new Error(`No hay paquetes de plataforma en ${npmDir}/. ¿Corriste 'vekziun pack' antes?`);
+    throw new Error(`No platform packages in ${npmDir}/. Did you run 'vekziun pack' first?`);
   }
 
   // 2) FASE 1: publicar TODOS los de plataforma (bajo --tag next)
-  console.log(`\nPublicando ${dirs.length} paquete(s) de plataforma (tag: ${tag})...`);
+  console.log(`\nPublishing ${dirs.length} platform package(s) (tag: ${tag})...`);
   const publishedNames: string[] = [];
   for (const dir of dirs) {
     const name = await readPkgName(dir);
@@ -67,11 +67,11 @@ export async function publish(opts: PublishOptions = {}): Promise<void> {
 
   // 3) FASE 2: publicar el principal ÚLTIMO (también bajo --tag next)
   const mainName = await readPkgName(mainDir);
-  console.log(`\nPublicando paquete principal: ${mainName} (tag: ${tag})...`);
+  console.log(`\nPublishing main package: ${mainName} (tag: ${tag})...`);
   await npmPublish(mainDir, tag, dryRun);
 
   // 4) FASE 3: promover todo de `next` a `latest` SOLO si todo lo anterior pasó
-  console.log(`\nPromoviendo de "${tag}" a "latest"...`);
+  console.log(`\nPromoting from "${tag}" to "latest"...`);
   const version = JSON.parse(await readFile(path.join(mainDir, "package.json"), "utf8")).version;
   const allNames = [...publishedNames, mainName];
   for (const name of allNames) {
@@ -83,5 +83,5 @@ export async function publish(opts: PublishOptions = {}): Promise<void> {
     console.log(`  ✓ ${name}@${version} -> latest`);
   }
 
-  console.log(`\n✅ Publicado: ${allNames.length} paquete(s) en "latest".`);
+  console.log(`\n✅ Published: ${allNames.length} package(s) to "latest".`);
 }

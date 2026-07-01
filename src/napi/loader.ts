@@ -70,10 +70,10 @@ export function loadBinding(crate: string, base: string, dir = __dirname): unkno
     if (code !== "MODULE_NOT_FOUND") throw err;
 
     throw new Error(
-      `No hay binario nativo para "${target}".\n` +
-        `  - Buscado local: ${localFile}\n` +
-        `  - Buscado paquete: ${pkg}\n` +
-        `¿Plataforma sin build publicado, o el optionalDependency no instaló?`
+      `No native binary for "${target}".\n` +
+        `  - Tried local: ${localFile}\n` +
+        `  - Tried package: ${pkg}\n` +
+        `Platform without a published build, or the optionalDependency didn't install?`
     );
   }
 }

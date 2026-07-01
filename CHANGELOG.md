@@ -4,6 +4,31 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.5] - 2026-06-20
+
+### Changed
+- **All user-facing console and error messages are now in English** (were partly in
+  Spanish). Affects CLI output, build/pack/publish messages, config validation errors,
+  Cargo.toml validation errors, and the loader's runtime error. Code comments are
+  unchanged. No API or behavior change — purely message text.
+
+## [0.1.4] - 2026-06-20
+
+### Added
+- **Pre-build Cargo.toml validation** (`cargo-check.ts`) — before running cargo,
+  Vekziun now verifies the manifest and gives clear, actionable errors instead of
+  letting cargo fail cryptically:
+  - Missing `crate-type = ["cdylib"]` → explains why it's needed and how to add it
+    (this is the #1 mistake when starting a NAPI addon).
+  - Detects the real crate name from `[lib] name` / `[package] name` instead of
+    assuming, so the built binary name always matches what cargo emits.
+- `build()` now warns if the config's crate name differs from the Cargo.toml's.
+
+### Note
+- Cross-compilation limits (e.g. Linux/ARM linker errors, musl cdylib restrictions
+  from a Windows host) are environment constraints, not Vekziun bugs. Full
+  cross-build support via cargo-zigbuild is planned (see ROADMAP.md).
+
 ## [0.1.3] - 2026-06-19
 
 ### Added

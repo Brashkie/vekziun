@@ -1,51 +1,50 @@
 #!/usr/bin/env node
-// cli.ts -> compila a dist/cli.js, expuesto como `vekziun` (campo "bin").
-// v0.1: solo el comando `build`. doctor/publish/init vienen después.
+// cli.ts -> compiles to dist/cli.js, exposed as `vekziun` (the "bin" field).
 
 import { loadConfig } from "./core/config.js";
 import { build } from "./napi/build.js";
 import { pack } from "./napi/pack.js";
 import { publish } from "./napi/publish.js";
 
-const HELP = `vekziun — compila addons NAPI-RS multiplataforma
+const HELP = `vekziun — build multi-platform NAPI-RS addons
 
-Uso:
-  vekziun build [--out <dir>]   Compila los targets que ESTA máquina puede producir
-  vekziun pack                  Empaqueta los .node existentes como paquetes de plataforma
-  vekziun publish [--dry-run]   Publica en npm (plataforma primero, principal último)
-  vekziun --help                Muestra esta ayuda
+Usage:
+  vekziun build [--out <dir>]   Build the targets THIS machine can produce
+  vekziun pack                  Package existing .node files as platform packages
+  vekziun publish [--dry-run]   Publish to npm (platform packages first, main last)
+  vekziun --help                Show this help
 
-Config: vekziun.config.json en el directorio actual.
+Config: vekziun.config.json in the current directory.
 `;
 
 async function cmdBuild(args: string[]): Promise<number> {
   const config = await loadConfig();
   const { crate, packageName, targets } = config.napi;
 
-  // --out sobreescribe el outDir de la config
+  // --out overrides the config's outDir
   const outFlag = args.indexOf("--out");
   const outDir = outFlag !== -1 ? args[outFlag + 1] : config.napi.outDir ?? "dist";
 
   console.log(`vekziun build`);
-  console.log(`  paquete: ${packageName}`);
+  console.log(`  package: ${packageName}`);
   console.log(`  crate:   ${crate}`);
   console.log(`  targets: ${targets.length}`);
-  console.log(`  salida:  ${outDir}/\n`);
+  console.log(`  output:  ${outDir}/\n`);
 
   const { built, skipped, failed } = await build(crate, targets, outDir);
 
   for (const p of built) console.log(`  ✓ ${p}`);
-  for (const s of skipped) console.log(`  ⊘ ${s.triple} (${s.reason}; lo hará otro runner de CI)`);
-  for (const f of failed) console.log(`  ✗ ${f.triple} (ERROR de compilación)`);
+  for (const s of skipped) console.log(`  ⊘ ${s.triple} (${s.reason}; another CI runner will build it)`);
+  for (const f of failed) console.log(`  ✗ ${f.triple} (COMPILATION error)`);
 
   console.log(
-    `\n${built.length} compilado(s), ${skipped.length} omitido(s), ${failed.length} con error.`
+    `\n${built.length} built, ${skipped.length} skipped, ${failed.length} failed.`
   );
 
-  // los FAILED son errores reales del código: mostramos la salida de cargo
+  // FAILED are real code errors: show cargo's output
   if (failed.length > 0) {
     console.error(`\n${"─".repeat(60)}`);
-    console.error(`Error de compilación. Salida de cargo:\n`);
+    console.error(`Compilation error. cargo output:\n`);
     for (const f of failed) {
       console.error(`[${f.triple}]`);
       console.error(f.output.trim());
@@ -53,18 +52,18 @@ async function cmdBuild(args: string[]): Promise<number> {
     }
     console.error(
       `${"─".repeat(60)}\n` +
-        `Esto es un error en el código Rust, no un problema de plataforma. ` +
-        `Corrige lo de arriba y vuelve a intentar.`
+        `This is an error in the Rust code, not a platform issue. ` +
+        `Fix the above and try again.`
     );
     return 1;
   }
 
-  // sin failed pero sin nada compilado: faltan todos los toolchains del host
+  // no failures but nothing built: all host toolchains are missing
   if (built.length === 0) {
     console.error(
-      `\nNo se compiló ningún target en esta máquina.\n` +
-        `Los targets se omitieron por falta de toolchain — normal si compilas en CI ` +
-        `con matriz de varios OS. Para compilar localmente, instala el target del host:\n` +
+      `\nNo target was built on this machine.\n` +
+        `Targets were skipped due to missing toolchains — normal when building in CI ` +
+        `with a multi-OS matrix. To build locally, install the host target:\n` +
         `  rustup target add <triple>`
     );
     return 1;
@@ -76,13 +75,13 @@ async function cmdPack(): Promise<number> {
   const config = await loadConfig();
   const { crate, packageName, targets, outDir } = config.napi;
 
-  // la versión es la fuente de verdad del package.json del addon, no del config
+  // the version is the source of truth from the addon's package.json, not the config
   const { readFile } = await import("node:fs/promises");
   let version = "0.0.0";
   try {
     version = JSON.parse(await readFile("package.json", "utf8")).version ?? "0.0.0";
   } catch {
-    /* sin package.json local: queda 0.0.0, el usuario debería tenerlo */
+    /* no local package.json: stays 0.0.0, the user should provide one */
   }
 
   console.log(`vekziun pack (v${version})`);
@@ -95,11 +94,11 @@ async function cmdPack(): Promise<number> {
   );
 
   for (const d of packed) console.log(`  ✓ ${d}`);
-  for (const t of missing) console.log(`  ⊘ ${t} (sin .node en esta máquina)`);
+  for (const t of missing) console.log(`  ⊘ ${t} (no .node on this machine)`);
 
-  console.log(`\n${packed.length} empaquetado(s), ${missing.length} faltante(s).`);
+  console.log(`\n${packed.length} packed, ${missing.length} missing.`);
   if (packed.length === 0) {
-    console.error(`\nNada que empaquetar. ¿Corriste 'vekziun build' antes?`);
+    console.error(`\nNothing to pack. Did you run 'vekziun build' first?`);
     return 1;
   }
   return 0;
@@ -127,7 +126,7 @@ async function main(): Promise<number> {
     case "publish":
       return cmdPublish(rest);
     default:
-      console.error(`Comando desconocido: "${cmd}"\n`);
+      console.error(`Unknown command: "${cmd}"\n`);
       console.log(HELP);
       return 1;
   }

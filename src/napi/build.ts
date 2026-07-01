@@ -11,6 +11,7 @@ import { promisify } from "node:util";
 import { copyFile, mkdir, access } from "node:fs/promises";
 import path from "node:path";
 import { resolveTriple, suffix, type PlatformTriple } from "../core/triples.js";
+import { inspectCargo } from "./cargo-check.js";
 
 const exec = promisify(execFile);
 
@@ -52,8 +53,8 @@ async function assertCargoExists(): Promise<void> {
     const e = err as NodeJS.ErrnoException;
     if (e.code === "ENOENT") {
       throw new Error(
-        `No se encontró 'cargo'. Rust no está instalado o no está en el PATH.\n` +
-          `  Instálalo desde https://rustup.rs y reabre la terminal.`
+        `'cargo' not found. Rust is not installed or not on the PATH.\n` +
+          `  Install it from https://rustup.rs and reopen the terminal.`
       );
     }
     throw err;
@@ -128,13 +129,32 @@ export interface BuildResult {
  * - built:   compilados OK
  * - skipped: la máquina no tiene el toolchain (otro runner lo hará) — no fatal
  * - failed:  el CÓDIGO no compila — fatal, con la salida de cargo para diagnosticar
+ *
+ * @param crate    nombre esperado del crate. Si el Cargo.toml define otro, se usa
+ *                 el del Cargo.toml (fuente de verdad) y se avisa del desajuste.
+ * @param cargoDir directorio del Cargo.toml (default: cwd)
  */
 export async function build(
   crate: string,
   requested: string[],
-  outDir = "dist"
-): Promise<BuildResult> {
+  outDir = "dist",
+  cargoDir = process.cwd()
+): Promise<BuildResult & { crateName: string }> {
   await assertCargoExists(); // falla claro si no hay Rust, antes de iterar
+
+  // VALIDAR el Cargo.toml antes de compilar: crate-type=cdylib + nombre real.
+  // Esto convierte errores crípticos de cargo en mensajes claros y accionables.
+  const cargo = await inspectCargo(cargoDir);
+
+  // el nombre del binario lo manda el Cargo.toml, no la config. Si difieren,
+  // usamos el del Cargo.toml (es lo que cargo realmente va a emitir) y avisamos.
+  const effectiveCrate = cargo.libName;
+  if (crate && crate !== effectiveCrate) {
+    console.warn(
+      `Aviso: la config dice crate "${crate}" pero Cargo.toml define "${effectiveCrate}". ` +
+        `Uso "${effectiveCrate}" (lo que cargo emite).`
+    );
+  }
 
   const built: string[] = [];
   const skipped: { triple: string; reason: string }[] = [];
@@ -143,7 +163,7 @@ export async function build(
   for (const triple of requested) {
     const t = resolveTriple(triple);
     try {
-      built.push(await buildOne(crate, t, outDir));
+      built.push(await buildOne(effectiveCrate, t, outDir));
     } catch (err) {
       if (err instanceof TargetUnavailableError) {
         skipped.push({ triple, reason: err.reason }); // omitido legítimo
@@ -155,5 +175,5 @@ export async function build(
     }
   }
 
-  return { built, skipped, failed };
+  return { built, skipped, failed, crateName: effectiveCrate };
 }
