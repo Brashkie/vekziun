@@ -1,23 +1,23 @@
-// triples.ts — LA ÚNICA FUENTE DE VERDAD.
-// build-time, runtime y publish importan ESTO. Nadie más conoce el formato del sufijo.
-// Si esto está bien, build/loader/publish NO PUEDEN divergir.
+// triples.ts — THE SINGLE SOURCE OF TRUTH.
+// build-time, runtime, and publish all import THIS. Nobody else knows the suffix format.
+// If this is correct, build/loader/publish CANNOT diverge.
 
 export type Abi = "gnu" | "musl" | "msvc" | "eabi" | null;
 
 export interface PlatformTriple {
-  /** Rust target triple — lo que se le pasa a `cargo build --target` */
+  /** Rust target triple — what gets passed to `cargo build --target` */
   triple: string;
-  /** lo que devuelve process.platform en Node */
+  /** what process.platform returns in Node */
   platform: NodeJS.Platform;
-  /** lo que devuelve process.arch en Node */
+  /** what process.arch returns in Node */
   arch: string;
-  /** ABI: gnu/musl en linux, msvc en windows, eabi en android-arm; null en darwin/android-arm64 */
+  /** ABI: gnu/musl on linux, msvc on windows, eabi on android-arm; null on darwin/android-arm64 */
   abi: Abi;
 }
 
-// 10 triples. Android verificado: napi-rs reporta process.platform="android",
-// arch "arm64"/"arm", con sufijos android-arm64 y android-arm-eabi (el de 32-bit
-// lleva "eabi"). Confirmado contra el loader que genera napi-rs.
+// 10 triples. Android verified: napi-rs reports process.platform="android",
+// arch "arm64"/"arm", with suffixes android-arm64 and android-arm-eabi (the 32-bit
+// one carries "eabi"). Confirmed against the loader napi-rs generates.
 export const TRIPLES: PlatformTriple[] = [
   { triple: "x86_64-pc-windows-msvc",     platform: "win32",   arch: "x64",   abi: "msvc" },
   { triple: "aarch64-pc-windows-msvc",    platform: "win32",   arch: "arm64", abi: "msvc" },
@@ -32,10 +32,10 @@ export const TRIPLES: PlatformTriple[] = [
 ];
 
 /**
- * EL CONTRATO. El sufijo que va detrás del nombre base.
- * Ejemplo: { linux, x64, musl } -> "linux-x64-musl"
+ * THE CONTRACT. The suffix that goes after the base name.
+ * Example: { linux, x64, musl } -> "linux-x64-musl"
  *          { darwin, arm64, null } -> "darwin-arm64"
- * Build, loader y publish llaman ESTA función. Es la razón de que no diverjan.
+ * Build, loader, and publish all call THIS function. It's why they can't diverge.
  */
 export function suffix(t: Pick<PlatformTriple, "platform" | "arch" | "abi">): string {
   return [t.platform, t.arch, t.abi].filter(Boolean).join("-");
@@ -46,12 +46,12 @@ export function packageNameFor(base: string, t: PlatformTriple): string {
   return `${base}-${suffix(t)}`;
 }
 
-/** busca el triple en la tabla; lanza claro si no está soportado */
+/** looks up the triple in the table; throws clearly if unsupported */
 export function resolveTriple(triple: string): PlatformTriple {
   const t = TRIPLES.find((x) => x.triple === triple);
   if (!t) {
     const known = TRIPLES.map((x) => x.triple).join(", ");
-    throw new Error(`Triple no soportado: "${triple}".\nSoportados: ${known}`);
+    throw new Error(`Unsupported triple: "${triple}".\nSupported: ${known}`);
   }
   return t;
 }

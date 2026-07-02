@@ -1,7 +1,7 @@
-// pack.ts — Fase A: empaqueta los .node que EXISTEN en una máquina dada.
-// Por cada .node en nativeDir, crea npm/<suffix>/{package.json, <crate>.<suffix>.node}.
-// Corre por-máquina: en tu laptop solo empaqueta lo que compilaste; en CI cada runner
-// empaqueta el suyo y luego se juntan todos los dirs npm/* antes de publicar.
+// pack.ts — Phase A: packages the .node files that EXIST on a given machine.
+// For each .node in nativeDir, creates npm/<suffix>/{package.json, <crate>.<suffix>.node}.
+// Runs per-machine: on your laptop it only packages what you compiled; in CI each runner
+// packages its own, then all npm/* dirs are gathered before publishing.
 
 import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -10,18 +10,18 @@ import { TRIPLES, suffix } from "../core/triples.js";
 import { platformPackageJson } from "./optional-deps.js";
 
 export interface PackResult {
-  packed: string[];   // dirs de paquete creados (npm/<suffix>)
-  missing: string[];  // triples pedidos cuyo .node no estaba en esta máquina
+  packed: string[];   // package dirs created (npm/<suffix>)
+  missing: string[];  // requested triples whose .node wasn't on this machine
 }
 
 /**
  * Empaqueta cada target cuyo .node exista en nativeDir.
  * @param base       nombre base del paquete: "@brashkie/hello-addon"
  * @param crate      nombre del crate: "hello-addon"
- * @param version    versión a estampar
+ * @param version    version to stamp
  * @param targets    triples deseados (de la config)
- * @param nativeDir  dónde están los .node (default "dist-native")
- * @param outDir     dónde crear las carpetas de paquete (default "npm")
+ * @param nativeDir  where the .node files are (default "dist-native")
+ * @param outDir     where to create the package folders (default "npm")
  */
 export async function pack(
   base: string,
@@ -44,7 +44,7 @@ export async function pack(
     const fileName = `${crate}.${suffix(t)}.node`;
     const src = path.join(nativeDir, fileName);
 
-    // si esta máquina no compiló este target, se lo salta (lo hizo/hará otro runner)
+    // if this machine didn't build this target, skip it (another runner did/will)
     if (!existsSync(src)) {
       missing.push(triple);
       continue;

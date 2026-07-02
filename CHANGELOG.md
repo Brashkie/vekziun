@@ -4,6 +4,31 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.6] - 2026-07-01
+
+### Changed
+- **Cleanup & consistency release** — no new features, no behavior change.
+- All code comments translated to English (project is now 100% English: code,
+  comments, messages, docs).
+- Remaining Spanish error/warning strings that had slipped through are now English
+  (`resolveTriple`, build artifact-not-found, crate-name mismatch warning).
+- `build()` return type cleaned up: `crateName` is now part of the `BuildResult`
+  interface instead of an intersection type.
+- Fixed the npm publish warning by removing the `./` prefix from the `bin` path
+  (`"vekziun": "dist/cli.js"`).
+- The contract test now also simulates the Android targets (arm64 + arm-eabi).
+
+### Docs
+- **ROADMAP.md fully rewritten** — detailed phases (v0.2 doctor/init/verify, v0.3
+  configs, v0.4 cargo-zigbuild cross-compile), plus an explicit "explored and rejected"
+  section documenting why Rust-rewrite, tsup-replacement, `verify --remote`, `--docker`,
+  and bundling ansimax were all turned down.
+- **Design Principles** section added to both READMEs, with the guiding tagline
+  "Fail before Cargo fails."
+- `verify` reframed in ROADMAP as one command with three phases (preflight → host →
+  structural), and a new v0.5 "smarter diagnostics" phase (recognize common cargo
+  failures and suggest fixes), with a design note on doing text-matching carefully.
+
 ## [0.1.5] - 2026-06-20
 
 ### Changed

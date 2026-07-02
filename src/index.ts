@@ -1,6 +1,6 @@
-// index.ts — entry point principal de @vekziun/napi.
-// Re-exporta la API pública para `import { ... } from "@vekziun/napi"`.
-// Los subpaths (./loader, ./build, ./triples) siguen disponibles para imports finos.
+// index.ts — main entry point for @vekziun/napi.
+// Re-exports the public API for `import { ... } from "@vekziun/napi"`.
+// Subpaths (./loader, ./build, ./triples) remain available for fine-grained imports.
 
 export {
   TRIPLES,

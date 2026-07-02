@@ -1,7 +1,7 @@
 // publish.ts — Fase B: publica los paquetes ya empaquetados, en orden seguro.
 // REGLA DE ORO: paquetes de plataforma PRIMERO (todos), paquete principal ÚLTIMO.
 // Si el principal sube antes, un `npm install` en esa ventana resuelve
-// optionalDependencies que aún no existen -> instala sin binario -> crash.
+// optionalDependencies that don't exist yet -> installs without binary -> crash.
 //
 // ATOMICIDAD v0.1 (sin rollback transaccional): se publica todo bajo --tag next,
 // se verifica, y solo entonces se promueve a latest. Un fallo a mitad NO contamina
@@ -65,12 +65,12 @@ export async function publish(opts: PublishOptions = {}): Promise<void> {
     publishedNames.push(name);
   }
 
-  // 3) FASE 2: publicar el principal ÚLTIMO (también bajo --tag next)
+  // 3) PHASE 2: publish the main package LAST (also under --tag next)
   const mainName = await readPkgName(mainDir);
   console.log(`\nPublishing main package: ${mainName} (tag: ${tag})...`);
   await npmPublish(mainDir, tag, dryRun);
 
-  // 4) FASE 3: promover todo de `next` a `latest` SOLO si todo lo anterior pasó
+  // 4) PHASE 3: promote everything from `next` to `latest` ONLY if all the above passed
   console.log(`\nPromoting from "${tag}" to "latest"...`);
   const version = JSON.parse(await readFile(path.join(mainDir, "package.json"), "utf8")).version;
   const allNames = [...publishedNames, mainName];

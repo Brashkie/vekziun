@@ -1,7 +1,7 @@
 // cargo-check.ts — valida el Cargo.toml ANTES de correr cargo.
 // Ataca los errores #1 de NAPI: falta crate-type=cdylib, o el nombre del crate
 // no coincide con lo que build busca. Mejor un mensaje claro ahora que un error
-// críptico de cargo después.
+// cryptic cargo error afterward.
 //
 // No usamos un parser TOML completo (mantener zero-dep); extraemos solo lo que
 // necesitamos con matching acotado a las secciones [package] y [lib].
@@ -12,15 +12,15 @@ import path from "node:path";
 export interface CargoInfo {
   /** nombre del paquete ([package].name) */
   packageName: string;
-  /** nombre de la lib si está definido ([lib].name), si no cae a packageName */
+  /** lib name if defined ([lib].name), otherwise falls back to packageName */
   libName: string;
   /** true si crate-type incluye cdylib */
   hasCdylib: boolean;
 }
 
-/** Extrae el valor de una key dentro de una sección [seccion] del TOML. */
+/** Extracts a key's value within a [section] of the TOML. */
 function readKeyInSection(toml: string, section: string, key: string): string | null {
-  // aísla el cuerpo de la sección [section] hasta la próxima cabecera [otra]
+  // isolate the [section] body up to the next [header]
   const secRe = new RegExp(`\\[${section}\\]([\\s\\S]*?)(?:\\n\\[|$)`);
   const secMatch = toml.match(secRe);
   if (!secMatch) return null;

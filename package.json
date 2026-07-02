@@ -1,6 +1,6 @@
 {
   "name": "@vekziun/napi",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Compila y resuelve addons NAPI-RS multiplataforma con un contrato único triple→suffix→package.",
   "license": "Apache-2.0",
   "author": "Hepein Oficial",
@@ -31,7 +31,7 @@
     "dist"
   ],
   "bin": {
-    "vekziun": "./dist/cli.js"
+    "vekziun": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",

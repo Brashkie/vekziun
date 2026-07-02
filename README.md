@@ -64,6 +64,19 @@ one coherent release.
 
 ---
 
+## Design principles
+
+**Fail before Cargo fails.** Catch configuration mistakes locally, before CI does.
+
+- Prefer clear diagnostics over magic.
+- Build only what the host can build.
+- Never hide Cargo errors — surface them, never swallow them.
+- Skip unsupported targets honestly, and say why.
+- Detect configuration problems before compilation starts.
+- Keep the build pipeline deterministic.
+
+---
+
 ## Configuration
 
 A `vekziun.config.json` describes intent, not files:
@@ -130,10 +143,10 @@ and what is planned is kept honest.
 
 | Version | Focus | Status |
 |---------|-------|--------|
-| **v0.1.x** | Foundation: single contract, build · pack · publish, musl-aware loader | ✅ current |
-| **v0.2.x** | DX: `vekziun doctor` (toolchain checks), `vekziun init` (scaffold) | planned |
+| **v0.1.x** | Foundation: single contract, build · pack · publish, musl-aware loader, 10 targets, Cargo.toml validation | ✅ current |
+| **v0.2.x** | DX: `vekziun doctor` (toolchain checks), `vekziun init` (scaffold), host-level `verify` | planned |
 | **v0.3.x** | Config: `.ts`/`.js` configs, shareable presets, typed `defineConfig` | planned |
-| **v0.4.x** | Reach: more targets (Android, FreeBSD, riscv64), parallel builds | planned |
+| **v0.4.x** | Reach: cross-compile via `cargo-zigbuild`, more targets (FreeBSD, riscv64), parallel builds, caching | planned |
 
 **Non-goals:** Vekziun will not become a generic JS bundler (use tsup/unbuild), a monorepo
 task runner, or "another build tool". It stays focused on shipping NAPI addons cross-platform.

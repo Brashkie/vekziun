@@ -1,9 +1,9 @@
 // build.ts — orquestador `vekziun build`.
-// REGLA CLAVE: compila SOLO los targets que la máquina actual puede producir.
+// KEY RULE: build ONLY the targets the current machine can produce.
 // La matriz completa vive en CI (un runner por OS). Un target que no se puede
-// construir aquí NO es error fatal: lo hará otro runner.
+// building here is NOT a fatal error: another runner will do it.
 //
-// Pero "no se puede en esta máquina" (falta toolchain) es DISTINTO de "tu código
+// But "can't on this machine" (missing toolchain) is DIFFERENT from "your code
 // no compila" (error de Rust). El primero se omite; el segundo se muestra y aborta.
 
 import { execFile } from "node:child_process";
@@ -15,28 +15,28 @@ import { inspectCargo } from "./cargo-check.js";
 
 const exec = promisify(execFile);
 
-/** Error que significa "el código del usuario no compila" — fatal, hay que mostrarlo. */
+/** Error meaning "the user's code does not compile" — fatal, must be shown. */
 export class CargoBuildError extends Error {
   constructor(public triple: string, public cargoOutput: string) {
-    super(`cargo build falló para ${triple}`);
+    super(`cargo build failed for ${triple}`);
     this.name = "CargoBuildError";
   }
 }
 
-/** Error que significa "esta máquina no puede con este target" — se omite, no es fatal. */
+/** Error meaning "this machine can't handle this target" — skipped, not fatal. */
 export class TargetUnavailableError extends Error {
   constructor(public triple: string, public reason: string) {
-    super(`target ${triple} no disponible en esta máquina: ${reason}`);
+    super(`target ${triple} unavailable on this machine: ${reason}`);
     this.name = "TargetUnavailableError";
   }
 }
 
 /**
- * cargo NO emite "addon.node". Emite el dylib del sistema con naming irregular:
+ * cargo does NOT emit "addon.node". It emits the system dylib with irregular naming:
  *   linux:   lib<crate_snake>.so
  *   darwin:  lib<crate_snake>.dylib
  *   windows: <crate_snake>.dll   (sin "lib")
- * y los guiones del nombre del crate se vuelven "_". Equivocarse aquí = MODULE_NOT_FOUND.
+ * and dashes in the crate name become "_". Getting this wrong = MODULE_NOT_FOUND.
  */
 function dylibName(crate: string, platform: NodeJS.Platform): string {
   const snake = crate.replace(/-/g, "_");
@@ -62,14 +62,14 @@ async function assertCargoExists(): Promise<void> {
 }
 
 /**
- * Distingue por qué falló cargo, leyendo su salida:
+ * Distinguishes why cargo failed, by reading its output:
  * - toolchain del target no instalado  -> TargetUnavailableError (se omite)
- * - error de compilación del código     -> CargoBuildError (fatal, se muestra)
+ * - code compilation error               -> CargoBuildError (fatal, shown)
  */
 function classifyCargoFailure(triple: string, stderr: string): never {
   const out = stderr.toLowerCase();
 
-  // señales de que falta el TARGET / toolchain (no es culpa del código)
+  // signals that the TARGET / toolchain is missing (not the code's fault)
   const targetMissing =
     out.includes("is not installed") ||
     out.includes("target may not be installed") ||
@@ -84,7 +84,7 @@ function classifyCargoFailure(triple: string, stderr: string): never {
     throw new TargetUnavailableError(triple, "falta el toolchain/linker del target");
   }
 
-  // si no, es un error de compilación real del código del usuario
+  // otherwise, it's a real compilation error in the user's code
   throw new CargoBuildError(triple, stderr);
 }
 
@@ -95,64 +95,65 @@ async function buildOne(crate: string, t: PlatformTriple, outDir: string): Promi
   } catch (err) {
     const e = err as { stderr?: string; stdout?: string; code?: string };
     const output = (e.stderr || "") + (e.stdout || "");
-    // si cargo corrió pero falló, clasificamos POR QUÉ
+    // if cargo ran but failed, classify WHY
     classifyCargoFailure(t.triple, output || String(err));
   }
 
-  // cargo dijo OK pero verificamos que el artefacto exista (defensa extra)
+  // cargo said OK but we verify the artifact exists (extra defense)
   const artifact = path.join("target", t.triple, "release", dylibName(crate, t.platform));
   try {
     await access(artifact);
   } catch {
     throw new CargoBuildError(
       t.triple,
-      `cargo terminó sin error pero no se encontró el binario:\n  ${artifact}\n` +
-        `¿Falta crate-type = ["cdylib"] en Cargo.toml, o el nombre del crate no coincide?`
+      `cargo finished without error but the binary wasn't found:\n  ${artifact}\n` +
+        `Missing crate-type = ["cdylib"] in Cargo.toml, or the crate name doesn't match?`
     );
   }
 
   await mkdir(outDir, { recursive: true });
-  // nombre canónico = MISMO suffix() que usa el loader. el contrato, otra vez.
+  // canonical name = SAME suffix() the loader uses. the contract, again.
   const dest = path.join(outDir, `${crate}.${suffix(t)}.node`);
   await copyFile(artifact, dest);
   return dest;
 }
 
 export interface BuildResult {
-  built: string[];                              // rutas a los .node generados
-  skipped: { triple: string; reason: string }[]; // omitidos (toolchain faltante)
-  failed: { triple: string; output: string }[];  // fallos REALES de compilación
+  built: string[];                                // paths to the generated .node files
+  skipped: { triple: string; reason: string }[];  // skipped (missing toolchain)
+  failed: { triple: string; output: string }[];   // REAL compilation failures
+  crateName: string;                              // effective crate name (from Cargo.toml)
 }
 
 /**
- * Construye los triples pedidos.
- * - built:   compilados OK
- * - skipped: la máquina no tiene el toolchain (otro runner lo hará) — no fatal
- * - failed:  el CÓDIGO no compila — fatal, con la salida de cargo para diagnosticar
+ * Builds the requested triples.
+ * - built:   compiled OK
+ * - skipped: the machine lacks the toolchain (another runner will do it) — not fatal
+ * - failed:  the CODE does not compile — fatal, with cargo's output for diagnosis
  *
- * @param crate    nombre esperado del crate. Si el Cargo.toml define otro, se usa
- *                 el del Cargo.toml (fuente de verdad) y se avisa del desajuste.
- * @param cargoDir directorio del Cargo.toml (default: cwd)
+ * @param crate    expected crate name. If the Cargo.toml defines a different one,
+ *                 the Cargo.toml's is used (source of truth) and a mismatch is warned.
+ * @param cargoDir Cargo.toml directory (default: cwd)
  */
 export async function build(
   crate: string,
   requested: string[],
   outDir = "dist",
   cargoDir = process.cwd()
-): Promise<BuildResult & { crateName: string }> {
-  await assertCargoExists(); // falla claro si no hay Rust, antes de iterar
+): Promise<BuildResult> {
+  await assertCargoExists(); // fails clearly if Rust is missing, before iterating
 
-  // VALIDAR el Cargo.toml antes de compilar: crate-type=cdylib + nombre real.
-  // Esto convierte errores crípticos de cargo en mensajes claros y accionables.
+  // VALIDATE the Cargo.toml before compiling: crate-type=cdylib + real name.
+  // This turns cryptic cargo errors into clear, actionable messages.
   const cargo = await inspectCargo(cargoDir);
 
-  // el nombre del binario lo manda el Cargo.toml, no la config. Si difieren,
-  // usamos el del Cargo.toml (es lo que cargo realmente va a emitir) y avisamos.
+  // the binary name comes from Cargo.toml, not the config. If they differ,
+  // we use the Cargo.toml's (it's what cargo actually emits) and warn.
   const effectiveCrate = cargo.libName;
   if (crate && crate !== effectiveCrate) {
     console.warn(
-      `Aviso: la config dice crate "${crate}" pero Cargo.toml define "${effectiveCrate}". ` +
-        `Uso "${effectiveCrate}" (lo que cargo emite).`
+      `Warning: config says crate "${crate}" but Cargo.toml defines "${effectiveCrate}". ` +
+        `Using "${effectiveCrate}" (what cargo emits).`
     );
   }
 
@@ -166,9 +167,9 @@ export async function build(
       built.push(await buildOne(effectiveCrate, t, outDir));
     } catch (err) {
       if (err instanceof TargetUnavailableError) {
-        skipped.push({ triple, reason: err.reason }); // omitido legítimo
+        skipped.push({ triple, reason: err.reason }); // legitimate skip
       } else if (err instanceof CargoBuildError) {
-        failed.push({ triple, output: err.cargoOutput }); // error real del código
+        failed.push({ triple, output: err.cargoOutput }); // real code error
       } else {
         throw err; // algo inesperado: propagar
       }

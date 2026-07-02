@@ -65,6 +65,19 @@ un release coherente.
 
 ---
 
+## Principios de diseño
+
+**Fallar antes de que falle Cargo.** Atrapar errores de configuración localmente, antes que CI.
+
+- Preferir diagnósticos claros sobre magia.
+- Compilar solo lo que el host puede compilar.
+- Nunca ocultar errores de Cargo — mostrarlos, jamás tragárselos.
+- Omitir targets no soportados con honestidad, y decir por qué.
+- Detectar problemas de configuración antes de que empiece la compilación.
+- Mantener el pipeline de build determinista.
+
+---
+
 ## Configuración
 
 Un `vekziun.config.json` describe intención, no archivos:
@@ -131,10 +144,10 @@ lo que existe y lo que está planeado se mantiene honesta.
 
 | Versión | Foco | Estado |
 |---------|------|--------|
-| **v0.1.x** | Base: contrato único, build · pack · publish, loader con musl | ✅ actual |
-| **v0.2.x** | DX: `vekziun doctor` (chequeo de toolchain), `vekziun init` (scaffold) | planeado |
+| **v0.1.x** | Base: contrato único, build · pack · publish, loader con musl, 10 targets, validación de Cargo.toml | ✅ actual |
+| **v0.2.x** | DX: `vekziun doctor` (chequeo de toolchain), `vekziun init` (scaffold), `verify` a nivel host | planeado |
 | **v0.3.x** | Config: configs `.ts`/`.js`, presets compartibles, `defineConfig` tipado | planeado |
-| **v0.4.x** | Alcance: más targets (Android, FreeBSD, riscv64), builds paralelos | planeado |
+| **v0.4.x** | Alcance: cross-compile vía `cargo-zigbuild`, más targets (FreeBSD, riscv64), builds paralelos, caché | planeado |
 
 **Non-goals:** Vekziun no será un bundler genérico de JS (usá tsup/unbuild), un task runner
 de monorepos, ni "otro build tool". Se mantiene enfocado en publicar addons NAPI multiplataforma.

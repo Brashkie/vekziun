@@ -1,18 +1,18 @@
-// config.ts — carga y valida vekziun.config.json.
-// v0.1: solo JSON (a prueba de balas en CI, sin transpilar TS en runtime).
-// Más adelante: c12/unconfig para aceptar .ts/.js/.mjs + presets con merge.
+// config.ts — loads and validates vekziun.config.json.
+// v0.1: JSON only (bulletproof in CI, no TS transpilation at runtime).
+// Later: c12/unconfig to accept .ts/.js/.mjs + presets with merge.
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 export interface NapiOptions {
-  /** nombre base del paquete npm; los por-plataforma se derivan de aquí */
+  /** base npm package name; per-platform ones are derived from this */
   packageName: string;
-  /** nombre del crate de Rust (= [package].name en Cargo.toml) */
+  /** Rust crate name (= [package].name in Cargo.toml) */
   crate: string;
-  /** Rust target triples — la unidad real, no platform×arch */
+  /** Rust target triples — the real unit, not platform×arch */
   targets: string[];
-  /** dónde caen los .node compilados */
+  /** where the compiled .node files land */
   outDir?: string;
 }
 
@@ -32,7 +32,7 @@ export async function loadConfig(cwd = process.cwd()): Promise<VekziunConfig> {
       found = file;
       break;
     } catch {
-      /* probar el siguiente */
+      /* try the next one */
     }
   }
 
